@@ -1,30 +1,60 @@
-import { createContext, useState, useCallback, useEffect } from "react"
-import initialState from "../src/Database/State"
+import { createContext, useCallback, useEffect, useState } from "react"
 
-const AppContext = createContext(initialState)
+import { makeClient } from "./services/api.js"
+
+const AppContext = createContext()
 
 export const AppContextProvider = (props) => {
-  const [state, setState] = useState(initialState)
-  const [showElement, setShowElement] = useState(false)
+  const [state, setState] = useState(null)
+  const [id, setId] = useState(null)
 
-  const add = useCallback((item) => {
-    setState((currentState) => {
-      return currentState.concat(item)
+  const ajouter = useCallback(async (titre, entry) => {
+    await makeClient().post("/", {
+      titre,
+      entry,
     })
-    setShowElement(true)
-    setTimeout(function () {
-      setShowElement(false)
-    }, 3000)
   }, [])
 
-  useEffect(() => {
-    setState(JSON.parse(localStorage.getItem("data") || []))
+  const supprimer = useCallback(async (id) => {
+    await makeClient().delete("/" + id)
   }, [])
 
-  useEffect(() => {
-    localStorage.setItem("data", JSON.stringify(state))
-  }, [state])
+  const editer = useCallback(async (id, titre, entry) => {
+    await makeClient().put("/" + id, {
+      titre,
+      entry,
+    })
+  }, [])
+  const obtenir = useCallback(async (id) => {
+    return makeClient().get("/" + id)
+  }, [])
 
-  return <AppContext.Provider {...props} value={{ add, state, showElement }} />
+  const obtenirTous = useCallback(async () => {
+    return await makeClient().get("/")
+  }, [])
+
+  useEffect(async () => {
+    let items = await obtenirTous().then((value) => {
+      return value.data
+    })
+    setState(items)
+  }, [obtenirTous, state])
+
+  return (
+    <AppContext.Provider
+      {...props}
+      value={{
+        state,
+        obtenirTous,
+        obtenir,
+        ajouter,
+        supprimer,
+        editer,
+        id,
+        setId,
+      }}
+    />
+  )
 }
+
 export default AppContext

@@ -1,12 +1,11 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import { Formik } from "formik"
 import Link from "next/link"
-import { useCallback, useContext } from "react"
+import { useRouter } from "next/router"
+import { useCallback, useContext, useEffect, useState } from "react"
 import * as yup from "yup"
 import AppContext from "../src/AppContext"
-import ActionMessage from "../src/components/ui/ActionMessage"
-import Button from "../src/components/ui/Button"
-import FormField from "../src/components/ui/FormField"
+import Button from "../src/components/Button"
+import FormField from "../src/components/FormField"
 
 const initialValues = {
   label: "",
@@ -22,14 +21,46 @@ const validationSchema = yup.object().shape({
 })
 
 const formPage = () => {
-  const { add, state } = useContext(AppContext)
+  const { ajouter, editer, obtenir, id } = useContext(AppContext)
+  const [defaultValues, setDefaultValues] = useState(initialValues)
+  const [item, setItem] = useState()
+
+  const router = useRouter()
+
   const handleFormSubmit = useCallback(
     (input) => {
-      add(input)
-      localStorage.setItem("state", JSON.stringify([...state, input]))
+      if (id == null) {
+        ajouter(input.label, input.value)
+        router.push("/")
+      } else {
+        editer(id, input.label, input.value)
+        router.push("/")
+      }
     },
-    [add, state]
+    [ajouter, editer, id, router]
   )
+
+  useEffect(() => {
+    const fetchData = async (id) => {
+      Promise.resolve(obtenir(id)).then((i) => setItem(i))
+    }
+
+    if (id == null) {
+      setDefaultValues({
+        label: "",
+        value: 0,
+      })
+    } else {
+      fetchData(id)
+
+      if (item) {
+        setDefaultValues({
+          label: item.data.titre,
+          value: item.data.entry,
+        })
+      }
+    }
+  }, [id, item, obtenir, setItem])
 
   return (
     <>
@@ -38,8 +69,9 @@ const formPage = () => {
           onSubmit={(values) => {
             handleFormSubmit(values)
           }}
-          initialValues={initialValues}
+          initialValues={defaultValues}
           validationSchema={validationSchema}
+          enableReinitialize={true}
         >
           {({ handleSubmit, isValid }) => (
             <form
@@ -72,7 +104,6 @@ const formPage = () => {
         <Link href="/">
           <a>Cancel</a>
         </Link>
-        <ActionMessage />
       </div>
     </>
   )

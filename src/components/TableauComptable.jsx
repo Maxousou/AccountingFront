@@ -1,47 +1,66 @@
 import classNames from "classnames"
+import { useRouter } from "next/router"
 import { useContext } from "react"
-import AppContext from "../AppContext"
+import AppContext from "./../AppContext"
 import Item from "./Item"
-import PInt from "./PInt"
 
 const TableauComptable = () => {
-  const { state } = useContext(AppContext)
+  const { state, supprimer, setId } = useContext(AppContext)
+
+  const router = useRouter()
+  const handleDelete = (id) => {
+    supprimer(id)
+  }
+  const handleEdit = (value) => {
+    setId(value)
+    router.push("/form-page")
+  }
+
+  if (!state) {
+    return <>500</>
+  }
 
   return (
     <div className="w-3/4 mt-2">
       <table className="table-auto w-full border-collapse ">
         <thead>
           <tr>
-            <th className="border border-gray-600">+</th>
-            <th className="border border-gray-600">-</th>
+            <th className="border border-green-600">+</th>
+            <th className="border border-red-600">-</th>
           </tr>
         </thead>
         <tbody>
-          {Object.entries(state).map(([itemId, { label, value }]) => (
+          {Object.entries(state).map(([itemId, { id, titre, entry }]) => (
             <tr
               key={itemId}
               className={classNames(
-                value >= 0 ? "Left" : "Right",
+                entry >= 0 ? "Left" : "Right",
                 itemId % 2 == 0 ? "bg-slate-100" : ""
               )}
             >
               <td className="border border-gray-300 w-2/5">
-                {value > 0 ? (
+                {entry > 0 ? (
                   <>
-                    <Item label={label} value={value} />
+                    <Item label={titre} value={entry} />
                   </>
                 ) : (
                   ""
                 )}
               </td>
               <td className="border border-gray-300 w-2/5">
-                {value <= 0 ? (
+                {entry <= 0 ? (
                   <>
-                    <Item label={label} value={value} />
+                    <Item label={titre} value={entry} />
                   </>
                 ) : (
                   ""
                 )}
+              </td>
+              <td className="border border-gray-300 w-2/5">
+                <button onClick={() => handleDelete(id)}>delete</button>
+              </td>
+              <td className="border border-gray-300 w-2/5">
+                <button onClick={() => handleEdit(id)}>edit</button>
               </td>
             </tr>
           ))}
@@ -49,24 +68,25 @@ const TableauComptable = () => {
             <td className="border border-gray-300">
               <div className="flex justify-between py-2 px-4">
                 Total:
-                <PInt
-                  value={state
-                    .filter((x) => x.value > 0)
-                    .reduce((accumulator, { value }) => accumulator + value, 0)}
-                />
+                <p>
+                  {" "}
+                  {state
+                    .filter((x) => x.entry > 0)
+                    .reduce((accumulator, { entry }) => accumulator + entry, 0)}
+                </p>
               </div>
             </td>
             <td className="border border-gray-300">
               <div className="flex justify-between py-2 px-4">
                 Total:
-                <PInt
-                  value={state
-                    .filter((x) => x.value < 0)
+                <p>
+                  {state
+                    .filter((x) => x.entry < 0)
                     .reduce(
-                      (accumulator, { value }) => accumulator + parseInt(value),
+                      (accumulator, { entry }) => accumulator + parseInt(entry),
                       0
                     )}
-                />
+                </p>
               </div>
             </td>
           </tr>
@@ -74,12 +94,13 @@ const TableauComptable = () => {
       </table>
       <div className="flex  justify-between py-2 px-4">
         <p className="w-1"> Result: </p>
-        <PInt
-          value={state.reduce(
-            (accumulator, { value }) => accumulator + parseInt(value),
+        <p>
+          {" "}
+          {state.reduce(
+            (accumulator, { entry }) => accumulator + parseInt(entry),
             0
           )}
-        />
+        </p>
       </div>
     </div>
   )
